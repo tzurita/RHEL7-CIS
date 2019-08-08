@@ -437,32 +437,36 @@
       - patch
       - rule_5.3.1
 
-- name: "SCORED | 5.3.2 | PATCH | Ensure lockout for failed password attempts is configured"
-  command: /bin/true
+- name: "SCORED | 5.3.2 | PATCH | Ensure lockout for failed password attempts is configured" # SI Baseline Change
+  copy:
+    src="etc/pam.d/system-auth"
+    dest="/etc/pam.d/system-auth-ac"
+    backup=yes
   changed_when: no
-  when:
-      - rhel7cis_rule_5_3_2
   tags:
       - level1
       - level2
       - patch
+      - rule_5.3
+      - rule_5.3
       - rule_5.3.2
-      - notimplemented
 
-- name: "SCORED | 5.3.3 | PATCH | Ensure password reuse is limited"
-  command: /bin/true
+- name: "SCORED | 5.3.3 | PATCH | Ensure password reuse is limited" # SI Baseline Change
+  copy:
+    src="etc/pam.d/password-auth"
+    dest="/etc/pam.d/password-auth-ac"
+    backup=yes
   changed_when: no
-  when:
-      - rhel7cis_rule_5_3_3
   tags:
       - level1
       - level2
       - patch
+      - rule_5.3
       - rule_5.3.3
-      - notimplemented
 
 - name: "SCORED | 5.3.4 | PATCH | Ensure password hashing algorithm is SHA-512"
-  command: authconfig --passalgo=sha512 --update
+  command: /bin/true
+  # command: authconfig --passalgo=sha512 --update # SI Baseline Modified
   changed_when: no
   failed_when: no
   when:
@@ -487,6 +491,26 @@
       - patch
       - rule_5.4.1.1
 
+- name: "SCORED | 5.4.1.1 | PATCH | Ensure password expiration is 90 days or less" # SI Baseline Change
+  command: "awk -F: '{if($5 != 90) print $1}' /etc/shadow"
+  register: users_exp_output
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.4.1
+      - rule_5.4.1.1
+
+- name: "SCORED | 5.4.1.1 | PATCH | Ensure password expiration is 90 days or less" # SI Baseline Change
+  command: "chage --maxdays 90 {{ item }}"
+  with_items: "{{ users_exp_output.stdout_lines }}"
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.4.1
+      - rule_5.4.1.1
+
 - name: "SCORED | 5.4.1.2 | PATCH | Ensure minimum days between password changes is 7 or more"
   lineinfile:
       state: present
@@ -499,6 +523,26 @@
       - level1
       - level2
       - patch
+      - rule_5.4.1.2
+
+- name: "SCORED | 5.4.1.2 | PATCH | Ensure minimum days between password changes is 0 or more" # SI Baseline Change
+  command: "awk -F: '{if($4 != 0) print $1}' /etc/shadow"
+  register: users_min_output
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.4.1
+      - rule_5.4.1.2
+
+- name: "SCORED | 5.4.1.2 | PATCH | Ensure minimum days between password changes is 0 or more" # SI Baseline Change
+  command: "chage --mindays 0 {{ item }}"
+  with_items: "{{ users_min_output.stdout_lines }}"
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.4.1
       - rule_5.4.1.2
 
 - name: "SCORED | 5.4.1.3 | PATCH | Ensure password expiration warning days is 7 or more"
@@ -515,9 +559,36 @@
       - patch
       - rule_5.4.1.3
 
-- name: "SCORED | 5.4.1.4 | PATCH | Ensure inactive password lock is 30 days or less"
-  command: /bin/true
-  changed_when: no
+- name: "SCORED | 5.4.1.3 | PATCH | Ensure password expiration warning days is 14 or more" # SI Baseline Change
+  command: "awk -F: '{if($6 != 14) print $1}' /etc/shadow"
+  register: users_warn_output
+  when:
+      - rhel7cis_rule_5_4_1_3
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.4.1
+      - rule_5.4.1.3
+
+- name: "SCORED | 5.4.1.3 | PATCH | Ensure password expiration warning days is 14 or more" # SI Baseline Change
+  command: "chage --warndays 14 {{ item }}"
+  with_items: "{{ users_warn_output.stdout_lines  }}"
+  when:
+      - rhel7cis_rule_5_4_1_3
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.4.1
+      - rule_5.4.1.3
+
+- name: "SCORED | 5.4.1.4 | PATCH | Ensure inactive password lock is 90 days or less"
+  lineinfile:
+      state: present
+      dest: /etc/default/useradd
+      regexp: '^INACTIVE'
+      line: "INACTIVE={{ rhel7cis_default_useradd['INACTIVE'] }}"
   when:
       - rhel7cis_rule_5_4_1_4
   tags:
@@ -527,10 +598,35 @@
       - rule_5.4.1.4
       - notimplemented
 
+- name: "SCORED | 5.4.1.4 | PATCH | Ensure inactive password lock is 90 days or less" # SI Baseline Change
+  command: "awk -F: '{if($7 != 90) print $1}' /etc/shadow"
+  register: users_inactive_lock
+  when:
+      - rhel7cis_rule_5_4_1_4
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.4.1
+      - rule_5.4.1.4
+      - notimplemented
+
+- name: "SCORED | 5.4.1.4 | PATCH | Ensure inactive password lock is 90 days or less" # SI Baseline Change
+  command: "chage --inactive 90 {{ item }}"
+  with_items: "{{ users_inactive_lock.stdout_lines }}"
+  when:
+      - rhel7cis_rule_5_4_1_4
+  tags:
+      - level1
+      - level2
+      - patch
+      - rule_5.4.1
+      - rule_5.4.1.4
+      - notimplemented
+
 - name: "SCORED | 5.4.2 | PATCH | Ensure system accounts are non-login"
-  shell: "awk -F: '($3 < {{ rhel7cis_rule_5_4_2_min_uid }}) {print $1 }' /etc/passwd"
+  command: /bin/true
   changed_when: no
-  register: system_account
   when:
       - rhel7cis_rule_5_4_2
   tags:
@@ -538,39 +634,7 @@
       - level2
       - patch
       - rule_5.4.2
-
-- name: "SCORED | 5.4.2 | PATCH | Ensure system accounts are non-login"
-  user:
-    name: "{{ item }}"
-    password_lock: true
-  with_items:
-    - "{{ system_account.stdout_lines }}"
-  when:
-      - rhel7cis_rule_5_4_2
-      - item != "root"
-  tags:
-      - level1
-      - level2
-      - patch
-      - rule_5.4.2
-
-- name: "SCORED | 5.4.2 | PATCH | Ensure system accounts are non-login"
-  user:
-    name: "{{ item }}"
-    shell: /sbin/nologin
-  with_items:
-    - "{{ system_account.stdout_lines }}"
-  when:
-      - rhel7cis_rule_5_4_2
-      - item != "root"
-      - item != "sync"
-      - item != "shutdown"
-      - item != "halt"
-  tags:
-      - level1
-      - level2
-      - patch
-      - rule_5.4.2
+      - notimplemented
 
 - name: "SCORED | 5.4.3 | PATCH | Ensure default group for the root account is GID 0"
   command: usermod -g 0 root
@@ -584,19 +648,26 @@
       - patch
       - rule_5.4.3
 
-- name: "SCORED | 5.4.4 | PATCH | Ensure default user umask is 027 or more restrictive"
+
+- name: "SCORED | 5.4.4 | PATCH | Ensure default user umask is 027 or more restrictive" # SI Baseline Change
   block:
       - name: "SCORED | 5.4.4 | PATCH | Ensure default user umask is 027 or more restrictive - /etc/bashrc"
         replace:
             path: /etc/bashrc
-            regexp: '(^\s+umask) 002'
-            replace: '\1 027'
+            regexp: '(^\s+umask)(.*)'
+            replace: '\1 077'
 
-      - name: "SCORED | 5.4.4 | PATCH | Ensure default user umask is 027 or more restrictive - /etc/profile"
+      - name: "SCORED | 5.4.4 | PATCH | Ensure default user umask is 027 or more restrictive - /etc/profile" # SI Baseline Change
         replace:
             path: /etc/profile
-            regexp: '(^\s+umask) 002'
-            replace: '\1 027'
+            regexp: '(^\s+umask)(.*)'
+            replace: '\1 077'
+
+      - name: "SCORED | 5.4.4 | PATCH | Ensure default user umask is 027 or more restrictive - /etc/profile" # SI Baseline Change
+        replace:
+            path: /etc/csh.cshrc
+            regexp: '(^\s+umask)(.*)'
+            replace: '\1 077'
   when:
       - rhel7cis_rule_5_4_4
   tags:

@@ -307,6 +307,7 @@ rhel7cis_aide_cron:
   aide_weekday: '*'
 
 # SELinux policy
+rhel7cis_selinux_state: enforcing
 rhel7cis_selinux_pol: targeted
 
 # Whether or not to run tasks related to auditing/patching the desktop environment
@@ -330,9 +331,6 @@ rhel7cis_time_synchronization_servers:
     - 1.pool.ntp.org
     - 2.pool.ntp.org
     - 3.pool.ntp.org
-
-rhel7cis_chrony_server_options: "minpoll 8"
-rhel7cis_ntp_server_options: "iburst"
 
 # 3.4.2 | PATCH | Ensure /etc/hosts.allow is configured
 rhel7cis_host_allow:
@@ -378,6 +376,10 @@ rhel7cis_pass:
     max_days: 90
     min_days: 7
     warn_age: 7
+
+rhel7cis_default_useradd:
+    INACTIVE: 30
+
 # Syslog system
 rhel7cis_syslog: rsyslog
 #rhel7cis_syslog: syslog-ng
@@ -385,7 +387,12 @@ rhel7cis_syslog: rsyslog
 rhel7cis_vartmp:
     source: /tmp
     fstype: none
-    opts: "defaults,nodev,nosuid,noexec,bind"
+    opts: "defaults, nodev, nosuid, noexec, bind"
     enabled: no
 
-rhel7cis_rule_5_4_2_min_uid: 1000
+rhel7cis_home:
+    source: /dev/mapper/rootvg-home_lv
+    fstype: xfs
+    opts: "defaults,nodev"
+    enabled: yes
+

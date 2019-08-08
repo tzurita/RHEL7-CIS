@@ -25,6 +25,7 @@
       enabled: yes
       masked: no
       state: reloaded
+  ignore_errors: True
 
 - name: systemd restart var-tmp.mount
   become: yes
@@ -34,6 +35,7 @@
       enabled: yes
       masked: no
       state: reloaded
+  ignore_errors: True
 
 - name: generate new grub config
   become: yes
@@ -72,7 +74,3 @@
     - rhel7cis_skip_for_travis == false
   tags:
     - skip_ansible_lint
-
-- name: grub2cfg
-  command: /sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
-  ignore_errors: True

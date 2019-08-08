@@ -294,11 +294,11 @@
   mount:
       name: /var/tmp
       src: "{{ rhel7cis_vartmp['source'] }}"
-      state: present
+      state: mounted
       fstype: "{{ rhel7cis_vartmp['fstype'] }}"
       opts: "{{ rhel7cis_vartmp['opts'] }}"
   when:
-      - rhel7cis_vartmp['enabled']
+      - "{{ rhel7cis_vartmp['enabled'] }} == True" # Modified for SI Baseline 
       - rhel7cis_rule_1_1_8
       - rhel7cis_rule_1_1_9
       - rhel7cis_rule_1_1_10
@@ -355,14 +355,12 @@
 - name: "SCORED | 1.1.14 | PATCH | Ensure nodev option set on /home partition"
   mount:
     name: "/home"
-    src: "{{ item.device }}"
+    src: "{{ rhel7cis_home['source'] }}"
     state: mounted
-    fstype: "{{ item.fstype }}"
-    opts: "nodev"
+    fstype: "{{ rhel7cis_home['fstype'] }}"
+    opts: "{{ rhel7cis_home['opts'] }}"
   when:
-      - rhel7cis_rule_1_1_14
-      - item.mount == "/home"
-  with_items: "{{ ansible_mounts }}"
+      - "{{ rhel7cis_home['enabled'] }} == True" # Modified for SI Baseline
   tags:
       - level1
       - level2
@@ -578,7 +576,7 @@
 
 - name: "SCORED | 1.3.2 | PATCH | Ensure filesystem integrity is regularly checked"
   cron:
-      name: Run AIDE integrity check
+      name: Run AIDE integrity check weekly
       cron_file: "{{ rhel7cis_aide_cron['cron_file'] }}"
       user: "{{ rhel7cis_aide_cron['cron_user'] }}"
       minute: "{{ rhel7cis_aide_cron['aide_minute'] | default('0') }}"
@@ -597,9 +595,9 @@
       - patch
       - rule_1.3.2
 
-- name: "SCORED | 1.4.1 | PATCH | Ensure permissions on bootloader config are configured"
+- name: "SCORED | 1.4.1 | PATCH | Ensure permissions on bootloader config are configured" # Modified SI Baseline
   stat:
-      path: /etc/grub2.cfg
+      path: /etc/grub2-efi.cfg
   register: grub_cfg
   when:
       - rhel7cis_rule_1_4_1
@@ -626,27 +624,43 @@
       - patch
       - rule_1.4.1
 
-- name: "SCORED | 1.4.2 | PATCH | Ensure bootloader password is set"
-  grub_crypt:
-      password: "{{ rhel7cis_bootloader_password }}"
-  register: grub_pass
-  when:
-      - rhel7cis_set_boot_pass
-      - rhel7cis_rule_1_4_2
-  tags:
-      - level1
-      - scored
-      - grub
-      - patch
-      - rule_1.4.2
+#- name: "SCORED | 1.4.2 | PATCH | Ensure bootloader password is set"
+#  grub_crypt:
+  #      password: "{{ rhel7cis_bootloader_password }}"
+  #  register: grub_pass
+  #  when:
+    #    #  - rhel7cis_set_boot_pass
+    #      - rhel7cis_rule_1_4_2
+    #  tags:
+      #      - level1
+      #      - scored
+      #      - grub
+      #      - patch
+      #      - rule_1.4.2
 
-- name: "SCORED | 1.4.2 | PATCH | Ensure bootloader password is set"
-  copy:
-      dest: /boot/grub2/user.cfg
-      content: "GRUB2_PASSWORD={{ grub_pass.passhash }}"
+#- name: "SCORED | 1.4.2 | PATCH | Ensure bootloader password is set" # Modified for SI Baseline
+#  copy:
+  #      dest: /boot/efi/EFI/redhat/user.cfg
+  #      content: "GRUB2_PASSWORD={{ grub_pass.passhash }}"
+  #  notify: generate new grub config
+  #  when:
+    #    #    - rhel7cis_set_boot_pass and grub_pass is defined and grub_pass.passhash is defined and grub_pass.passhash != ''
+    #      - rhel7cis_rule_1_4_2
+    #  tags:
+      #      - level1
+      #      - scored
+      #      - grub
+      #      - patch
+      #      - rule_1.4.2
+
+- name: "SCORED | 1.4.2 | PATCH | Ensure bootloader password is set" # Modified for SI Baseline
+  expect:
+      command: grub2-setpassword
+      responses: 
+        (?i)password: "{{ rhel7cis_bootloader_password }}"
   notify: generate new grub config
   when:
-      - rhel7cis_set_boot_pass and grub_pass is defined and grub_pass.passhash is defined and grub_pass.passhash != ''
+    #    - rhel7cis_set_boot_pass and grub_pass is defined and grub_pass.passhash is defined and grub_pass.passhash != ''
       - rhel7cis_rule_1_4_2
   tags:
       - level1
@@ -787,7 +801,7 @@
   selinux:
       conf: /etc/selinux/config
       policy: "{{ rhel7cis_selinux_pol }}"
-      state: enforcing
+      state: "{{ rhel7cis_selinux_state }}"
   when:
       - not rhel7cis_selinux_disable
       - rhel7cis_rule_1_6_1_2
@@ -802,7 +816,7 @@
   selinux:
       conf: /etc/selinux/config
       policy: "{{ rhel7cis_selinux_pol }}"
-      state: enforcing
+      state: "{{ rhel7cis_selinux_state }}"
   when:
       - not rhel7cis_selinux_disable
       - rhel7cis_rule_1_6_1_3
