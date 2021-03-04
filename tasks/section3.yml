@@ -393,7 +393,7 @@
         - rhel7cis_firewall == "firewalld"
 
     - name: "SCORED | 3.6.2 | Ensure default deny firewall policy"
-      firewalld:
+      ansible.posix.firewalld:
           state: enabled
           zone: drop
           permanent: true
@@ -435,7 +435,7 @@
     - notimplemented
 
 - name: "SCORED | 3.6.5 | Ensure firewall rules exist for all open ports"
-  firewalld:
+  ansible.posix.firewalld:
     service: "{{ item }}"
     state: enabled
     zone: drop
